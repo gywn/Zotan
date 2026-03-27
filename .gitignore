@@ -1,0 +1,23 @@
+# Python
+*.egg-info/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Workspace
+workspace/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Agent-related
+.mini-agent/
+.zotan/
