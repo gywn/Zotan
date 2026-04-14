@@ -9,6 +9,7 @@ dependencies = [
     "cappa>=0.1.0",
     "curl_cffi>=0.6.0",
     "html2text>=2024.1.0",
+    "llama-cloud>=1.0.0",
     "magika>=0.1.0",
     "prompt_toolkit>=3.0.0",
     "pydantic_ai_slim[anthropic,openai]>=1.0.0",

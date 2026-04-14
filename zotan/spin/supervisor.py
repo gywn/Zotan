@@ -9,6 +9,7 @@ from pydantic_ai.tools import Tool, ToolFuncEither
 from ..tools.bash_tools import bash
 from ..tools.file_tools import edit_file, read_file, write_file
 from ..tools.http_tools import fetch_http
+from ..tools.rich_file_tools import parse_rich_file
 from ..tools.serper_tools import get_current_date, google_search
 from ..types_ import MainRunContext, Stack, ToolExecution, get_llm_model
 
@@ -39,6 +40,13 @@ def get_supervisor_tools(main_ctx: MainRunContext) -> Sequence[Tool[MainRunConte
             get_current_date,
             google_search,
         ]
+
+    if (
+        # Need file access
+        main_ctx.workspace_dir is not None
+        and main_ctx.config.llamacloud_api_key
+    ):
+        tools.append(parse_rich_file)
 
     return tools
 

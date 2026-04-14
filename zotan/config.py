@@ -45,6 +45,9 @@ class Config:
     # tools.http_tools
     firefox_profile: Path | None = None
 
+    # tools.rich_file_tools
+    llamacloud_api_key: str | None = None
+
     @staticmethod
     def _merge(*configs: Config) -> Config:
         """Merge multiple configurations"""
