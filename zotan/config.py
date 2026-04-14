@@ -42,6 +42,9 @@ class Config:
     # tools.serper_tools
     serper_api_key: str | None = None
 
+    # tools.http_tools
+    firefox_profile: Path | None = None
+
     @staticmethod
     def _merge(*configs: Config) -> Config:
         """Merge multiple configurations"""
@@ -88,8 +91,16 @@ class Config:
         config = Config._merge(*configs)
 
         # Validate required external configurations
+        config = dataclasses.replace(
+            config,
+            firefox_profile=config.firefox_profile.expanduser().absolute() if config.firefox_profile else None,
+        )
+
         if not any(isinstance(config, LLMConfig) for config in config.llm_configs.values()):
             raise ValueError("No LLM configured")
+
+        if config.firefox_profile is not None and not config.firefox_profile.is_dir():
+            raise ValueError(f"{config.firefox_profile} is not a directory")
 
         return config
 
