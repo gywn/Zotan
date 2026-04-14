@@ -6,6 +6,7 @@ from typing import Sequence
 from pydantic_ai import ModelResponse, RunContext, RunUsage
 from pydantic_ai.tools import Tool, ToolFuncEither
 
+from ..tools.file_tools import edit_file, read_file, write_file
 from ..types_ import MainRunContext, Stack, ToolExecution, get_llm_model
 
 
@@ -18,7 +19,14 @@ def get_supervisor_ctx(main_ctx: MainRunContext) -> RunContext[MainRunContext]:
 
 
 def get_supervisor_tools(main_ctx: MainRunContext) -> Sequence[Tool[MainRunContext] | ToolFuncEither[MainRunContext, ...]]:
-    return []
+    if main_ctx.workspace_dir is not None:
+        return [
+            read_file,
+            edit_file,
+            write_file,
+        ]
+    else:
+        return []
 
 
 @dataclasses.dataclass
