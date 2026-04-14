@@ -6,6 +6,7 @@ from typing import Sequence
 from pydantic_ai import ModelResponse, RunContext, RunUsage
 from pydantic_ai.tools import Tool, ToolFuncEither
 
+from ..tools.bash_tools import bash
 from ..tools.file_tools import edit_file, read_file, write_file
 from ..types_ import MainRunContext, Stack, ToolExecution, get_llm_model
 
@@ -24,6 +25,7 @@ def get_supervisor_tools(main_ctx: MainRunContext) -> Sequence[Tool[MainRunConte
             read_file,
             edit_file,
             write_file,
+            bash,
         ]
     else:
         return []
