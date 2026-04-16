@@ -9,6 +9,7 @@ dependencies = [
     "magika>=0.1.0",
     "prompt_toolkit>=3.0.0",
     "pydantic_ai_slim[anthropic,openai]>=1.0.0",
+    "requests>=2.31.0",
     "rich>=15.0.0",
     "tiktoken>=0.5.0",
     "tomli_w>=1.0.0",
