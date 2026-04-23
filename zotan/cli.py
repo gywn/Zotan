@@ -10,6 +10,7 @@ import cappa
 from .config import WORKING_MODE, Config
 from .types_ import MainRunContext
 from .ui.one_round import run_one_round
+from .ui.terminal import run_supervisor
 
 
 @cappa.command(
@@ -45,8 +46,14 @@ def main() -> None:
         workspace_dir=workspace_dir,
     )
 
+    if not sys.stdin.isatty():
+        # Run as a POSIX program
+        coro = run_one_round(main_ctx, sys.stdin.read().strip())
+    else:
+        coro = run_supervisor(main_ctx)
+
     try:
-        asyncio.run(run_one_round(main_ctx, sys.stdin.read().strip()))
+        asyncio.run(coro)
     except KeyboardInterrupt:
         # Critical edge case where `KeyboardInterrupt` is raised in poll()/I/O operations, not converted to `CancelledError`
         exit(1)

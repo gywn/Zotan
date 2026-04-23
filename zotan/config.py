@@ -36,6 +36,9 @@ class Config:
 
     llm_configs: Mapping[str, LLMConfig | str] = dataclasses.field(default_factory=dict[str, LLMConfig | str])
 
+    # ui.terminal
+    editing_mode: Literal["emacs", "vi", ""] = ""
+
     @staticmethod
     def _merge(*configs: Config) -> Config:
         """Merge multiple configurations"""

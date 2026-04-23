@@ -4,6 +4,8 @@ from typing import Literal
 
 import tiktoken
 from magika import ContentTypeInfo, Magika
+from rich.console import Console
+from rich.markdown import Markdown
 
 
 def guess_line_ending(text: str) -> Literal["\n", "\r\n", "\r"]:
@@ -11,6 +13,25 @@ def guess_line_ending(text: str) -> Literal["\n", "\r\n", "\r"]:
     for m in re.finditer("\r?\n|\r", text):
         counts[m.group(0)] += 1  # type: ignore[reportArgumentType]
     return max(counts.items(), key=lambda p: p[1])[0]
+
+
+def _fix_rich_background_colors() -> None:
+    """
+    HACK: ANSI standard only defines foreground colors (0-15), not for backgrounds.
+    When Rich's DEFAULT_STYLES includes background color values, they cause poor contrast.
+    """
+    from rich.default_styles import DEFAULT_STYLES
+
+    for style in DEFAULT_STYLES.values():
+        if style.bgcolor not in (None, "default"):
+            style._bgcolor = None  # type: ignore[reportPrivateUsage]
+
+
+_fix_rich_background_colors()
+
+
+def print_markdown(content: str) -> None:
+    Console(color_system="truecolor").print(Markdown(content))
 
 
 MIN_TOKENS_PER_LINE = 50
