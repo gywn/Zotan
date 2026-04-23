@@ -39,6 +39,9 @@ class Config:
     # ui.terminal
     editing_mode: Literal["emacs", "vi", ""] = ""
 
+    # tools.serper_tools
+    serper_api_key: str | None = None
+
     @staticmethod
     def _merge(*configs: Config) -> Config:
         """Merge multiple configurations"""

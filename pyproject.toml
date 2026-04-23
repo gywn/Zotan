@@ -5,6 +5,7 @@ description = "Zotan AI Agent Framework"
 readme = "docs/ARCHITECTURE.md"
 requires-python = ">=3.13"
 dependencies = [
+    "aiohttp>=3.9.0",
     "cappa>=0.1.0",
     "magika>=0.1.0",
     "prompt_toolkit>=3.0.0",
