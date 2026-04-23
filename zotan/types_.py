@@ -140,3 +140,8 @@ def get_llm_model(llm_config: LLMConfig, thinking: bool = True) -> Model:
             },
         ),
     )
+
+
+@dataclasses.dataclass
+class AgentSession:
+    stack: Stack
