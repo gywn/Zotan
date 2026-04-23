@@ -1,7 +1,9 @@
 import re
+from pathlib import Path
 from typing import Literal
 
 import tiktoken
+from magika import ContentTypeInfo, Magika
 
 
 def guess_line_ending(text: str) -> Literal["\n", "\r\n", "\r"]:
@@ -120,3 +122,21 @@ def truncate_text_by_tokens(
 
     # Return the best result found
     return lower_content
+
+
+_magika = Magika()
+
+
+def guess_file_type(path: Path) -> ContentTypeInfo | None:
+    try:
+        return _magika.identify_path(path).output  # type: ignore[reportUnknownMemberType]
+    except IndexError:
+        return None
+
+
+def is_source_code_file(type_info: ContentTypeInfo) -> bool:
+    return type_info.label in {
+        label
+        for label, info in _magika._cts_infos.items()  # type: ignore[reportPrivateUsage]
+        if info.group == "code"
+    }  # fmt: skip
