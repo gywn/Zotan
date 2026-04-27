@@ -75,3 +75,31 @@ RUN git config --global --add safe.directory /workspace && \
         "curl_cffi>=0.6.0" \
         "isort" \
         "pyright[nodejs]"
+    
+FROM base AS rust
+
+# 替换 Rustup 源为 mirrors.tuna.tsinghua.edu.cn (在中国大陆访问更快)
+ENV RUSTUP_DIST_SERVER=https://mirrors.tuna.tsinghua.edu.cn/rustup
+
+# 将用户本地二进制目录添加到 PATH
+ENV PATH=/home/zotan/.cargo/bin:$PATH
+
+# 安装 Rust 工具链
+RUN sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+        build-essential \
+        rustup \
+    && \
+    sudo rm -rf /var/lib/apt/lists/* && \
+    rustup default stable && \
+    rustup component add \
+        rustfmt \
+        clippy
+
+# 替换 Cargo 源为 mirrors.tuna.tsinghua.edu.cn (在中国大陆访问更快)
+COPY <<EOF /home/zotan/.cargo/config.toml
+[source.crates-io]
+replace-with = "tuna"
+
+[source.tuna]
+registry = "sparse+https://mirrors.tuna.tsinghua.edu.cn/crates.io-index/"
+EOF
