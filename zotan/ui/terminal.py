@@ -4,6 +4,7 @@ import dataclasses
 import functools
 import getpass
 import itertools
+import json
 from asyncio import CancelledError
 from contextlib import AsyncExitStack
 from pathlib import Path
@@ -20,6 +21,7 @@ from pydantic import TypeAdapter, ValidationError
 from pydantic_ai import ModelRequest, ModelResponse, PartDeltaEvent, PartEndEvent, PartStartEvent, RunContext, SystemPromptPart, TextPart, ThinkingPart, ThinkingPartDelta, ToolCallPart, ToolReturnPart, UserPromptPart
 from pydantic_ai.usage import UsageBase
 
+from ..config import Config
 from ..functional import cast_list
 from ..spin.session import SpinSession, get_resumable_stack
 from ..spin.supervisor import SpinSupervisor, get_supervisor_ctx, get_supervisor_tools
@@ -447,6 +449,7 @@ class SpinTerminal:
 async def run_supervisor(main_ctx: MainRunContext) -> None:
     try:
         print("Welcome to the Zotan REPL. Press Ctrl+C or Ctrl+D to exit.")
+        print(f"\n{Colors.DIM}{tomli_w.dumps(json.loads(TypeAdapter(Config).dump_json(main_ctx.config))).strip()}{Colors.RESET}")
 
         ctx = get_supervisor_ctx(main_ctx)
         tools = get_supervisor_tools(main_ctx)
