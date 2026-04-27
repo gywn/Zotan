@@ -36,7 +36,7 @@ async def _ensure_podman_container(ctx: RunContext[MainRunContext]) -> None:
         "--rm",
         "--detach",
         "--volume", f"{ctx.deps.workspace_dir}:{WORKSPACE}",
-        "zotan:python",
+        "zotan:rust",
         stdout=asyncio.subprocess.DEVNULL,
         stderr=asyncio.subprocess.DEVNULL,  # fmt: skip
     )
