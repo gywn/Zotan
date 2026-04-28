@@ -2,12 +2,14 @@
 
 import asyncio
 import contextlib
+import html
 from contextlib import ExitStack
 from typing import Any, cast
 
 from pydantic_ai import RunContext, Tool
 
 from ..config import WORKING_MODE, WORKSPACE
+from ..context_manage import process_text
 from ..text import truncate_text_by_tokens
 from ..types_ import MainRunContext, ToolExecutionError
 
@@ -70,6 +72,79 @@ async def _remove_podman_container(ctx: RunContext[MainRunContext]) -> None:
     del ctx.metadata["bash"]
 
 
+# As models get more capable, some of what lives in the harness today will get absorbed into the model.
+def _get_instruction_complex_bash_use(_ctx: RunContext[MainRunContext]) -> str:
+    return f"""
+<instruction>Evaluate whether this task should be delegated to a sub-agent rather than executed via raw Bash commands</instruction>
+<rule>Respond with "APPROVED" to approve the command</rule>
+<rule>When rejecting, instruct the user to delegate tasks to sub-agents</rule>
+<rule>When in doubt or if intent is ambiguous, reject the command</rule>
+<category name="Complex Multi-Step Tasks">
+  <description>Tasks requiring multiple steps, extensive Bash usage, or exceeding basic shell capabilities</description>
+  <example>Analyze the codebase structure</example>
+  <example>Analyze requirements, implement solution, then test</example>
+  <example>python -c "..."</example>
+</category>
+<category name="Large Output Generation">
+  <description>Commands producing excessive output or performing bulk operations</description>
+  <example>cat, grep, find, xargs, curl, head, tail, wc...</example>
+</category>
+<category name="Environment Modification">
+  <description>Commands installing dependencies or modifying system packages</description>
+  <example>apt, apt-get, pip, npm...</example>
+</category>
+<category name="Long-Running Tasks">
+  <description>Commands running for extended periods or consuming significant CPU resources</description>
+  <example>g++, gcc, clang, make, cmake, pyright, mypy, eslint, tsc, java, javac, go build, rustc, cargo build, python -m pytest, node --test...</example>
+</category>
+<example>
+  <name>Simple File Renaming</name>
+  <user>
+    Task: Read untitled.md, summarize its content, and rename it to a better name.
+    Command: mv untitled.md market_research.md
+    Intent: Rename information summary file
+  </user>
+  <answer>APPROVED</answer>
+</example>
+<example>
+  <name>APT Package Installation</name>
+  <user>
+    Task: Fix compilation errors in my C++ project.
+    Command: sudo apt install build-essential
+    Intent: Install GCC toolchain
+  </user>
+  <answer>Use a sub-agent for package installation</answer>
+</example>
+<example>
+  <name>Code Analysis via Directory Traversal</name>
+  <user>
+    Task: Understand this repository's structure.
+    Command: find /workspace -type f -name '*.ts'
+    Intent: List all TypeScript files in the workspace
+  </user>
+  <answer>Use a sub-agent for codebase analysis</answer>
+</example>
+<example>
+  <name>Syntax Verification via Python</name>
+  <user>
+    Task: Download all new photos from my website.
+    Command: python -c "import ast; ast.parse(open('download_photos.py').read())"
+    Intent: Verify Python syntax is correct before running the script
+  </user>
+  <answer>Use a sub-agent for linting and type checking</answer>
+</example>
+<example>
+  <name>C++ Compilation</name>
+  <user>
+    Task: Fix compilation errors in my C++ project.
+    Command: g++ main.cpp -o main
+    Intent: Compile the codebase
+  </user>
+  <answer>Use a sub-agent for resource-intensive operations</answer>
+</example>
+""".strip()
+
+
 async def _bash(
     ctx: RunContext[MainRunContext],
     command: str,
@@ -93,6 +168,11 @@ async def _bash(
         Command output including exit code, stdout, and stderr.
     """
     await _ensure_podman_container(ctx)
+
+    user_prompt = html.escape(f"Task:{ctx.prompt}\nIntent: {intent}\nCommand: {command}".strip())
+    complex_bash_note = await process_text(ctx.deps, _get_instruction_complex_bash_use(ctx), user_prompt)
+    if ctx.deps.agent_kind == "supervisor" and complex_bash_note.strip() != "APPROVED":
+        raise ToolExecutionError(complex_bash_note.strip())
 
     if WORKING_MODE == "container":
         proc = await asyncio.create_subprocess_shell(

@@ -4,14 +4,14 @@ import dataclasses
 from typing import AsyncGenerator, AsyncIterator, Awaitable, Callable, Sequence, TypeAlias, cast
 
 from pydantic import ValidationError
-from pydantic_ai import FunctionToolset, ModelMessage, ModelRequest, ModelResponse, PartDeltaEvent, PartEndEvent, PartStartEvent, RunContext, RunUsage, Tool, ToolCallPart, ToolReturnPart
+from pydantic_ai import FunctionToolset, ModelMessage, ModelRequest, ModelResponse, PartDeltaEvent, PartEndEvent, PartStartEvent, RunContext, RunUsage, Tool, ToolCallPart, ToolReturnPart, UserPromptPart
 from pydantic_ai._utils import is_async_callable
 from pydantic_ai.models import ModelRequestParameters
 from pydantic_ai.tools import ToolFuncEither
 from pydantic_ai.toolsets.function import FunctionToolsetTool
 
 from ..functional import cast_list, maybe_next
-from ..types_ import MainRunContext, Stack, StackFrame, ToolExecution, ToolExecutionError, ToolExecutionPart, get_pending
+from ..types_ import MainRunContext, Stack, StackFrame, ToolExecution, ToolExecutionError, ToolExecutionPart, get_instructive, get_pending
 
 
 def validate_runnable_stack(stack: Stack) -> bool:
@@ -155,6 +155,16 @@ class SpinToolExec:
 
         else:  # ModelResponse
             if tool_calls := {p.tool_call_id: p for p in stack[-1].parts if isinstance(p, ToolCallPart)}:
+                try:
+                    user_prompt = next(
+                        "\n\n".join(str(part.content) for part in frame.parts if isinstance(part, UserPromptPart))
+                        # Find out the last user prompt
+                        for frame in reversed(stack)
+                        if isinstance(frame, ModelRequest) and not get_instructive(frame)
+                    )
+                except StopIteration:
+                    user_prompt = ""
+                ctx.prompt = user_prompt
                 tool_execs = [
                     (
                         ToolExecutionPart(
